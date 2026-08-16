@@ -1,0 +1,366 @@
+// TalentMatch AI — Prisma schema
+// Models mirror src/domain/types.ts. Enum-ish fields are stored as String to
+// match the existing mock data exactly and avoid mapping drift.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String
+  avatarUrl     String?
+  headline      String?
+  roles         String[] @default([])
+  status        String   @default("active")
+  verifiedEmail Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  candidateProfile CandidateProfile?
+  resumes           Resume[]
+  savedJobs         SavedJob[]
+  companyFollows    CompanyFollow[]
+  savedSearches     SavedSearch[]
+  notifications     Notification[]
+  applications      Application[]
+  stageEvents       ApplicationStageEvent[]
+  feedback          Feedback[]
+  notes             Note[]
+  auditEvents    AuditEvent[]
+  companyMembers CompanyMember[]
+  sessions       Session[]
+  reports        Report[]
+}
+
+model CandidateProfile {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  headline          String   @default("")
+  summary           String   @default("")
+  location          String   @default("")
+  workAuthorization String   @default("")
+  experienceLevel   String   @default("Entry level")
+  yearsOfExperience Int      @default(0)
+  skills            String[] @default([])
+  links             Json?
+  preferences       Json?
+  completed         Boolean  @default(false)
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Resume {
+  id          String   @id @default(cuid())
+  userId      String
+  fileName    String
+  fileType    String   @default("application/pdf")
+  sizeBytes   Int      @default(0)
+  storageKey  String?
+  status      String   @default("processing")
+  isPrimary   Boolean  @default(false)
+  error       String?
+  uploadedAt  DateTime @default(now())
+  processedAt DateTime?
+
+  structured Json?
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applications Application[]
+}
+
+model Company {
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  logoUrl       String?
+  description   String   @default("")
+  website       String   @default("")
+  locations     String[] @default([])
+  industry      String   @default("")
+  sizeRange     String   @default("")
+  foundedYear   Int      @default(0)
+  culture       String   @default("")
+  benefits      String[] @default([])
+  contactPolicy String   @default("")
+  verified      Boolean  @default(false)
+  status        String   @default("verified")
+  jobCount      Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  jobs         Job[]
+  members      CompanyMember[]
+  follows      CompanyFollow[]
+  subscriptions Subscription[]
+}
+
+model CompanyMember {
+  id        String   @id @default(cuid())
+  companyId String
+  userId    String
+  role      String   @default("recruiter")
+  joinedAt  DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, userId])
+}
+
+model Job {
+  id                      String   @id @default(cuid())
+  companyId               String
+  companyName             String   @default("")
+  companyLogoUrl          String?
+  companyVerified         Boolean  @default(false)
+  title                   String
+  slug                    String   @unique
+  summary                 String   @default("")
+  description             String   @default("")
+  responsibilities        String[] @default([])
+  requirements            String[] @default([])
+  preferredQualifications String[] @default([])
+  benefits                String[] @default([])
+  salaryMin               Int      @default(0)
+  salaryMax               Int      @default(0)
+  salaryCurrency          String   @default("USD")
+  employmentType          String   @default("Full-time")
+  workMode                String   @default("Remote")
+  experienceLevel         String   @default("Entry level")
+  industry                String   @default("")
+  locations               String[] @default([])
+  skillsRequired          String[] @default([])
+  skillsPreferred         String[] @default([])
+  status                  String   @default("draft")
+  isFeatured              Boolean  @default(false)
+  postedAt                DateTime @default(now())
+  deadline                DateTime
+  applicationsCount       Int      @default(0)
+  source                  String   @default("portal")
+
+  company     Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  applications Application[]
+  savedJobs    SavedJob[]
+}
+
+model SavedJob {
+  id      String   @id @default(cuid())
+  userId  String
+  jobId   String
+  savedAt DateTime @default(now())
+  notes   String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job  Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, jobId])
+}
+
+model CompanyFollow {
+  id         String   @id @default(cuid())
+  userId     String
+  companyId  String
+  followedAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, companyId])
+}
+
+model SavedSearch {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  filters     Json?
+  alertEnabled Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Application {
+  id                 String   @id @default(cuid())
+  candidateId        String
+  candidateName      String
+  candidateAvatarUrl String?
+  jobId              String
+  jobTitle           String
+  companyId          String
+  companyName        String
+  companyLogoUrl     String?
+  resumeId           String
+  resumeFileName     String   @default("")
+  coverLetter        String   @default("")
+  status             String   @default("Applied")
+  matchScore         Int      @default(0)
+  source             String   @default("portal")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  matchBreakdown     Json?
+
+  job         Job                    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  resume      Resume                 @relation(fields: [resumeId], references: [id], onDelete: Restrict)
+  user        User                   @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  stageEvents ApplicationStageEvent[]
+  interviews  Interview[]
+  feedback    Feedback[]
+  notes       Note[]
+
+  @@index([jobId])
+  @@index([candidateId])
+}
+
+model ApplicationStageEvent {
+  id            String   @id @default(cuid())
+  applicationId String
+  from          String
+  to            String
+  actorId       String
+  actorName     String   @default("")
+  note          String?
+  createdAt     DateTime @default(now())
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  actor       User        @relation(fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+}
+
+model Interview {
+  id             String   @id @default(cuid())
+  applicationId  String
+  jobTitle       String   @default("")
+  candidateName  String   @default("")
+  interviewerIds String[] @default([])
+  scheduledAt    DateTime
+  durationMin    Int      @default(30)
+  format         String   @default("Video")
+  participants   String[] @default([])
+  agenda         String   @default("")
+  location       String?
+  status         String   @default("scheduled")
+  createdAt      DateTime @default(now())
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+}
+
+model Feedback {
+  id              String   @id @default(cuid())
+  applicationId   String
+  interviewerId   String
+  interviewerName String   @default("")
+  score           Int      @default(0)
+  strengths       String   @default("")
+  concerns        String   @default("")
+  recommendation  String   @default("maybe")
+  createdAt       DateTime @default(now())
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  interviewer User       @relation(fields: [interviewerId], references: [id], onDelete: Cascade)
+}
+
+model Note {
+  id            String   @id @default(cuid())
+  applicationId String
+  authorId      String
+  authorName    String   @default("")
+  body          String
+  isPrivate     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  author      User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  body      String   @default("")
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Report {
+  id           String   @id @default(cuid())
+  reporterId   String
+  reporterName String   @default("")
+  contentType  String
+  contentId    String
+  contentTitle String   @default("")
+  reason       String
+  details      String   @default("")
+  status       String   @default("open")
+  createdAt    DateTime @default(now())
+  resolution   Json?
+
+  reporter User @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+}
+
+model Subscription {
+  id           String   @id @default(cuid())
+  companyId    String
+  plan         String   @default("free")
+  status       String   @default("active")
+  features     String[] @default([])
+  startedAt    DateTime @default(now())
+  renewsAt     DateTime
+  monthlySeats Int      @default(1)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+model AuditEvent {
+  id          String   @id @default(cuid())
+  actorId     String
+  actorName   String   @default("")
+  actorRole   String?
+  action      String
+  entityType  String
+  entityId    String   @default("")
+  entityLabel String   @default("")
+  details     String?
+  ipAddress   String   @default("")
+  createdAt   DateTime @default(now())
+
+  actor User @relation(fields: [actorId], references: [id], onDelete: Cascade)
+}
+
+model AIProcessingJob {
+  id           String    @id @default(cuid())
+  type         String
+  label        String    @default("")
+  inputRef     String    @default("")
+  outputRef    String?
+  modelVersion String    @default("")
+  status       String    @default("queued")
+  error        String?
+  attempts     Int       @default(0)
+  createdAt    DateTime  @default(now())
+  completedAt  DateTime?
+
+  @@index([status])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+}
