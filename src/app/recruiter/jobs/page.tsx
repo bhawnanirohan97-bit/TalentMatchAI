@@ -1,23 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { BarChart3, Eye, Pause, Play, Plus, UsersRound, X } from "lucide-react";
+import { BarChart3, Eye, Pause, Pencil, Play, Plus, UsersRound, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { createJob, listCompanyJobs, setJobStatus } from "@/lib/api/recruiter";
+import { createJob, listCompanyJobs, setJobStatus, updateJob } from "@/lib/api/recruiter";
 import { EmptyState, ErrorState } from "@/components/shared/states";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { EMPTY_JOB_FORM, jobFormFromJob, JobFormFields, type JobFormState } from "@/components/recruiter/job-form-fields";
 import { timeAgo } from "@/lib/utils";
-import { EMPLOYMENT_TYPE, JOB_STATUS, WORK_MODE } from "@/domain/enums";
-import { EXPERIENCE_LEVEL } from "@/domain/enums";
+import { JOB_STATUS } from "@/domain/enums";
+import type { Job } from "@/domain/types";
 
 const STATUS_LABEL: Record<string, string> = {
   [JOB_STATUS.DRAFT]: "Draft",
@@ -29,7 +26,8 @@ const STATUS_LABEL: Record<string, string> = {
 export default function RecruiterJobsPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ title: "", summary: "", salaryMin: "", salaryMax: "", employmentType: "Full-time", workMode: "Remote", experienceLevel: "Entry level" });
+  const [editing, setEditing] = useState<Job | null>(null);
+  const [form, setForm] = useState<JobFormState>(EMPTY_JOB_FORM);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["recruiter-jobs"],
@@ -62,76 +60,71 @@ export default function RecruiterJobsPage() {
     onSuccess: () => {
       toast.success("Job draft created");
       setOpen(false);
-      setForm({ title: "", summary: "", salaryMin: "", salaryMax: "", employmentType: "Full-time", workMode: "Remote", experienceLevel: "Entry level" });
+      setEditing(null);
+      setForm(EMPTY_JOB_FORM);
       qc.invalidateQueries({ queryKey: ["recruiter-jobs"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not create job"),
   });
+
+  const update = useMutation({
+    mutationFn: (jobId: string) =>
+      updateJob(jobId, {
+        title: form.title,
+        summary: form.summary,
+        salaryMin: Number(form.salaryMin) || 0,
+        salaryMax: Number(form.salaryMax) || 0,
+        employmentType: form.employmentType as never,
+        workMode: form.workMode as never,
+        experienceLevel: form.experienceLevel as never,
+      }),
+    onSuccess: () => {
+      toast.success("Job updated");
+      setOpen(false);
+      setEditing(null);
+      setForm(EMPTY_JOB_FORM);
+      qc.invalidateQueries({ queryKey: ["recruiter-jobs"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not update job"),
+  });
+
+  function openCreate() {
+    setEditing(null);
+    setForm(EMPTY_JOB_FORM);
+    setOpen(true);
+  }
+
+  function openEdit(job: Job) {
+    setEditing(job);
+    setForm(jobFormFromJob(job));
+    setOpen(true);
+  }
 
   return (
     <div className="space-y-6">
       <PageHeader title="Jobs" description="Manage postings, publish drafts, and track applicants per role.">
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button><Plus className="mr-2 size-4" aria-hidden /> New job</Button>
+            <Button onClick={openCreate}><Plus className="mr-2 size-4" aria-hidden /> New job</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Create a job</DialogTitle>
-              <DialogDescription>Start a draft — publish it when the details are ready.</DialogDescription>
+              <DialogTitle>{editing ? "Edit job" : "Create a job"}</DialogTitle>
+              <DialogDescription>
+                {editing
+                  ? "Update the job details and save your changes."
+                  : "Start a draft — publish it when the details are ready."}
+              </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="job-title">Job title</Label>
-                <Input id="job-title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Frontend Developer (React)" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="job-summary">Summary</Label>
-                <Textarea id="job-summary" rows={3} value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="salary-min">Salary min</Label>
-                  <Input id="salary-min" type="number" value={form.salaryMin} onChange={(e) => setForm({ ...form, salaryMin: e.target.value })} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="salary-max">Salary max</Label>
-                  <Input id="salary-max" type="number" value={form.salaryMax} onChange={(e) => setForm({ ...form, salaryMax: e.target.value })} />
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-2">
-                  <Label>Type</Label>
-                  <Select value={form.employmentType} onValueChange={(v) => setForm({ ...form, employmentType: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {Object.values(EMPLOYMENT_TYPE).map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Work mode</Label>
-                  <Select value={form.workMode} onValueChange={(v) => setForm({ ...form, workMode: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {Object.values(WORK_MODE).map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Level</Label>
-                  <Select value={form.experienceLevel} onValueChange={(v) => setForm({ ...form, experienceLevel: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {Object.values(EXPERIENCE_LEVEL).map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
+            <JobFormFields form={form} onChange={setForm} />
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpen(false)}><X className="mr-2 size-4" aria-hidden /> Cancel</Button>
-              <Button onClick={() => create.mutate()} disabled={!form.title.trim() || create.isPending}>Create draft</Button>
+              <Button
+                onClick={() => (editing ? update.mutate(editing.id) : create.mutate())}
+                disabled={!form.title.trim() || create.isPending || update.isPending}
+              >
+                {editing ? "Save changes" : "Create draft"}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -181,6 +174,9 @@ export default function RecruiterJobsPage() {
                     <Play className="mr-1.5 size-3.5" aria-hidden /> Resume
                   </Button>
                 )}
+                <Button size="sm" variant="outline" onClick={() => openEdit(job)}>
+                  <Pencil className="mr-1.5 size-3.5" aria-hidden /> Edit
+                </Button>
                 <Button size="sm" variant="outline" asChild>
                   <Link href={`/recruiter/jobs/${job.id}`}><BarChart3 className="mr-1.5 size-3.5" aria-hidden /> Analytics</Link>
                 </Button>

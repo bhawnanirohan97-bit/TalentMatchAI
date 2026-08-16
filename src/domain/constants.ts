@@ -68,6 +68,13 @@ export const ROLE_LABEL: Record<Role, string> = {
   [ROLE.ADMIN]: "Administrator",
 };
 
+export const WORKSPACE_HOME: Record<Role, string> = {
+  [ROLE.CANDIDATE]: "/candidate",
+  [ROLE.RECRUITER]: "/recruiter",
+  [ROLE.HIRING_MANAGER]: "/recruiter",
+  [ROLE.ADMIN]: "/admin",
+};
+
 export const SKILL_SUGGESTIONS = [
   "TypeScript",
   "React",

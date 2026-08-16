@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { registerDemo } from "@/lib/api/auth";
 import { useAuth } from "@/lib/auth/session";
 import { ROLE } from "@/domain/enums";
+import { WORKSPACE_HOME } from "@/domain/constants";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -27,7 +28,7 @@ export function SignupView() {
       const session = await registerDemo(form.name, form.email, form.password, form.role);
       signIn(session.user, session.roles);
       toast.success("Account created — welcome!");
-      router.push(form.role === ROLE.CANDIDATE ? "/candidate" : "/login");
+      router.push(WORKSPACE_HOME[form.role]);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't create account");
     } finally {

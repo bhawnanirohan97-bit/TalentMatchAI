@@ -6,17 +6,12 @@ import { Logo } from "@/components/shared/logo";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/session";
+import { WORKSPACE_HOME } from "@/domain/constants";
 
 export function PublicHeader() {
   const { isAuthenticated, roles } = useAuth();
 
-  const workspaceHref = isAuthenticated
-    ? roles.includes("administrator")
-      ? "/admin"
-      : roles.includes("recruiter") || roles.includes("hiring_manager")
-        ? "/recruiter"
-        : "/candidate"
-    : "/login";
+  const workspaceHref = isAuthenticated && roles[0] ? WORKSPACE_HOME[roles[0]] : "/login";
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">

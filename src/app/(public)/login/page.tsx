@@ -3,7 +3,7 @@ import { LoginView } from "@/components/auth/login-view";
 
 export const metadata: Metadata = {
   title: "Sign in",
-  description: "Sign in to TalentMatch AI as a candidate, recruiter, hiring manager, or administrator.",
+  description: "Sign in to TalentMatch AI as a recruiter or student to access your workspace.",
 };
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {

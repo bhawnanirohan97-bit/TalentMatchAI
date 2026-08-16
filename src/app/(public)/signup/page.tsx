@@ -3,7 +3,7 @@ import { SignupView } from "@/components/auth/signup-view";
 
 export const metadata: Metadata = {
   title: "Create account",
-  description: "Create a candidate account on TalentMatch AI.",
+  description: "Create a recruiter or student account on TalentMatch AI.",
 };
 
 export default function SignupPage() {
