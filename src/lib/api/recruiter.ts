@@ -20,7 +20,7 @@ import { notFound, ok, paginate, validationError } from "@/lib/api/client";
 import { computeMatch } from "@/lib/match/engine";
 import { FEEDBACK, INTERVIEWS, NOTES, RECRUITER_APPLICATIONS_ALL, RECRUITER_STAGE_EVENTS } from "@/lib/mock/applications";
 import { COMPANIES, COMPANY_MEMBERS } from "@/lib/mock/companies";
-import { JOBS } from "@/lib/mock/jobs";
+import { JOBS, addJob, updateJobInStore } from "@/lib/mock/jobs";
 import { CANDIDATE_PROFILES } from "@/lib/mock/users";
 import { getResume } from "@/lib/mock/resumes";
 
@@ -29,7 +29,6 @@ let stageEvents: ApplicationStageEvent[] = [...RECRUITER_STAGE_EVENTS];
 const interviewsStore = new Map(INTERVIEWS.map((i) => [i.id, i]));
 const notesStore = new Map(NOTES.map((n) => [n.id, n]));
 const feedbackStore = new Map(FEEDBACK.map((f) => [f.id, f]));
-const jobsStore = new Map(JOBS.map((j) => [j.id, j]));
 
 export interface ApplicantProfilePreview {
   profile: CandidateProfile;
@@ -39,11 +38,11 @@ export interface ApplicantProfilePreview {
 }
 
 export function getActiveJobs(): Job[] {
-  return Array.from(jobsStore.values()).filter((j) => j.status === JOB_STATUS.ACTIVE);
+  return JOBS.filter((j) => j.status === JOB_STATUS.ACTIVE);
 }
 
 export async function listCompanyJobs(companyId: string): Promise<Job[]> {
-  const jobs = Array.from(jobsStore.values())
+  const jobs = JOBS
     .filter((j) => j.companyId === companyId)
     .sort((a, b) => new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime());
   return ok(jobs, 250);
@@ -111,7 +110,7 @@ export async function getApplicantDetail(applicationId: string): Promise<{
 }> {
   const app = applicantStore.get(applicationId);
   if (!app) notFound("Application not found");
-  const job = jobsStore.get(app.jobId);
+  const job = JOBS.find((j) => j.id === app.jobId);
   const candidateProfile = CANDIDATE_PROFILES.find((p) => p.userId === app.candidateId);
   const resume = getResume(app.resumeId);
   const matchBreakdown = candidateProfile && job ? computeMatch(candidateProfile, job) : emptyMatch(app.matchScore);
@@ -232,7 +231,7 @@ export function getInterview(id: string): Interview | undefined {
 }
 
 export async function getJobAnalytics(jobId: string): Promise<JobAnalytics> {
-  const job = jobsStore.get(jobId);
+  const job = JOBS.find((j) => j.id === jobId);
   if (!job) notFound("Job not found");
   const apps = Array.from(applicantStore.values()).filter((a) => a.jobId === jobId);
 
@@ -315,33 +314,33 @@ export async function createJob(input: Partial<Job> & { companyId: string; title
     locations: input.locations ?? ["Remote"],
     skillsRequired: input.skillsRequired ?? [],
     skillsPreferred: input.skillsPreferred ?? [],
-    status: JOB_STATUS.DRAFT,
+    status: JOB_STATUS.ACTIVE,
     isFeatured: false,
     postedAt: new Date().toISOString(),
     deadline: input.deadline ?? new Date(Date.now() + 30 * 86400000).toISOString(),
     applicationsCount: 0,
     source: "portal",
   };
-  jobsStore.set(job.id, job);
+  addJob(job);
   return ok(job, 400);
 }
 
 export async function updateJob(jobId: string, input: Partial<Job>): Promise<Job> {
-  const job = jobsStore.get(jobId);
+  const job = JOBS.find((j) => j.id === jobId);
   if (!job) notFound("Job not found");
   const updated = { ...job, ...input };
-  jobsStore.set(jobId, updated);
+  updateJobInStore(updated);
   return ok(updated, 300);
 }
 
 export async function setJobStatus(jobId: string, status: JobStatus): Promise<Job> {
-  const job = jobsStore.get(jobId);
+  const job = JOBS.find((j) => j.id === jobId);
   if (!job) notFound("Job not found");
   const updated = { ...job, status };
-  jobsStore.set(jobId, updated);
+  updateJobInStore(updated);
   return ok(updated, 250);
 }
 
 export function getJobForEdit(jobId: string): Job | undefined {
-  return jobsStore.get(jobId);
+  return JOBS.find((j) => j.id === jobId);
 }

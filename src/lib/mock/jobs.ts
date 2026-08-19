@@ -922,6 +922,15 @@ export function getJobBySlug(slug: string): Job | undefined {
   return JOBS.find((j) => j.slug === slug);
 }
 
+export function addJob(job: Job): void {
+  JOBS.unshift(job);
+}
+
+export function updateJobInStore(job: Job): void {
+  const index = JOBS.findIndex((j) => j.id === job.id);
+  if (index !== -1) JOBS[index] = job;
+}
+
 export const SAVED_JOBS_FOR_DEMO = [
   { id: "sj-1", userId: "u-demo-cand", jobId: "job-2", savedAt: daysAgoIso(4), notes: "Great match for my stack" },
   { id: "sj-2", userId: "u-demo-cand", jobId: "job-10", savedAt: daysAgoIso(6), notes: "" },
