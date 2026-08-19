@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: "Sign in to TalentMatch AI as a recruiter or student to access your workspace.",
 };
 
-export default async function LoginPage({ searchParams }: PageProps<"/login">) {
+export default async function AuthLoginPage({ searchParams }: PageProps<"/login">) {
   const params = await searchParams;
   const account = typeof params.account === "string" ? params.account : undefined;
   return <LoginView defaultAccount={account} />;

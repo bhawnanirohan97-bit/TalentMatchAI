@@ -2,15 +2,17 @@
 
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Sparkles, X } from "lucide-react";
+import { X } from "lucide-react";
 import { toast } from "sonner";
 import { dismissRecommendation, getRecommendations } from "@/lib/api/candidates";
 import { useAuth } from "@/lib/auth/session";
-import { JobCard } from "@/components/shared/job-card";
+import { CompanyLogo } from "@/components/shared/company-logo";
+import { MatchIndicator } from "@/components/shared/match-indicator";
+import { SkillBadge } from "@/components/shared/badges";
 import { EmptyState, ErrorState } from "@/components/shared/states";
 import { PageHeader } from "@/components/shared/page-header";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { formatSalary } from "@/lib/utils";
 
 export default function RecommendationsPage() {
   const { user } = useAuth();
@@ -34,22 +36,13 @@ export default function RecommendationsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={
-          <span className="flex items-center gap-2">
-            <Sparkles className="size-5 text-primary" aria-hidden />
-            AI recommendations
-          </span>
-        }
-        description="Ranked for you by our explainable matching engine. Every match is scored and justified — nothing is hidden."
+        title="Recommended for you"
+        description="Jobs matched to your profile and preferences."
       />
 
-      <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/40 px-4 py-3 text-sm">
-        <Badge variant="outline">Why this list?</Badge>
-        <span className="text-muted-foreground">
-          Scores come from your profile (skills, experience, preferences) compared against each job&apos;s requirements.
-          Dismiss a job to teach the engine.
-        </span>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        Scores come from your skills, experience, and preferences compared against each job&apos;s requirements.
+      </p>
 
       {isLoading ? (
         <div className="flex justify-center py-20">
@@ -58,7 +51,7 @@ export default function RecommendationsPage() {
       ) : isError ? (
         <ErrorState onRetry={() => refetch()} />
       ) : !data || data.length === 0 ? (
-        <div className="rounded-lg border bg-card">
+        <div className="rounded-md border bg-card">
           <EmptyState
             icon="inbox"
             title="No recommendations right now"
@@ -67,21 +60,48 @@ export default function RecommendationsPage() {
           />
         </div>
       ) : (
-        <div className="divide-y rounded-lg border bg-card">
+        <div className="divide-y rounded-md border bg-card">
           {data.map((rec) => (
-            <div key={rec.job.id}>
-              <JobCard job={rec.job} matchScore={rec.matchScore} showMatch matchReason={rec.reason} />
-              <div className="flex justify-end px-4 pb-3">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-muted-foreground"
-                  onClick={() => dismiss.mutate(rec.job.id)}
-                  disabled={dismiss.isPending}
-                >
-                  <X className="mr-1.5 size-3.5" aria-hidden /> Not interested
-                </Button>
+            <div key={rec.job.id} className="flex items-start gap-3 p-4 transition-colors hover:bg-muted/30">
+              <CompanyLogo name={rec.job.companyName} size="md" />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <Link href={`/jobs/${rec.job.slug}`} className="text-sm font-semibold text-foreground hover:text-primary">
+                      {rec.job.title}
+                    </Link>
+                    <p className="text-sm text-muted-foreground">{rec.job.companyName}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {rec.job.locations.join(", ")} · {rec.job.workMode} · {rec.job.employmentType}
+                    </p>
+                    <p className="mt-0.5 text-xs font-medium text-foreground">
+                      {formatSalary(rec.job.salaryMin, rec.job.salaryMax, rec.job.salaryCurrency)}
+                    </p>
+                  </div>
+                  <MatchIndicator score={rec.matchScore} />
+                </div>
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {rec.job.skillsRequired.slice(0, 5).map((skill) => (
+                    <SkillBadge key={skill}>{skill}</SkillBadge>
+                  ))}
+                  {rec.job.skillsRequired.length > 5 && (
+                    <SkillBadge>+{rec.job.skillsRequired.length - 5}</SkillBadge>
+                  )}
+                </div>
+                {rec.reason && (
+                  <p className="mt-1.5 text-xs text-muted-foreground">{rec.reason}</p>
+                )}
               </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7 shrink-0"
+                aria-label="Not interested"
+                onClick={() => dismiss.mutate(rec.job.id)}
+                disabled={dismiss.isPending}
+              >
+                <X className="size-3.5 text-muted-foreground" aria-hidden />
+              </Button>
             </div>
           ))}
         </div>

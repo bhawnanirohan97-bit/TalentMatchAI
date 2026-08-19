@@ -9,7 +9,6 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth/session";
 import { DEMO_ACCOUNTS } from "@/lib/api/auth";
 import { Logo } from "@/components/shared/logo";
-import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -53,8 +52,8 @@ function NavList({ items, pathname, onNavigate }: { items: NavItem[]; pathname: 
           {group.label && (
             <p
               className={cn(
-                "mb-1 px-2 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase",
-                gi > 0 ? "mt-5" : "mt-0",
+                "mb-1 px-2.5 text-[11px] font-medium tracking-wider text-muted-foreground/60 uppercase",
+                gi > 0 ? "mt-4" : "mt-0",
               )}
             >
               {group.label}
@@ -69,10 +68,10 @@ function NavList({ items, pathname, onNavigate }: { items: NavItem[]; pathname: 
                 onClick={onNavigate}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "relative flex items-center gap-2.5 rounded-md px-2 py-[7px] text-[13px] font-medium transition-colors",
+                  "relative flex items-center gap-2.5 rounded-md px-2.5 py-[6px] text-[13px] font-medium transition-colors",
                   active
                     ? "bg-accent text-foreground"
-                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
                 )}
               >
                 {active && (
@@ -81,12 +80,12 @@ function NavList({ items, pathname, onNavigate }: { items: NavItem[]; pathname: 
                 <item.icon className={cn("size-4 shrink-0", active ? "text-primary" : "")} aria-hidden />
                 <span className="flex-1">{item.label}</span>
                 {item.badgeKey === "unread" && item.badgeCount ? (
-                  <span className="flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
+                  <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
                     {item.badgeCount}
                   </span>
                 ) : null}
-                {item.badgeCount ? (
-                  <span className="flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-muted px-1.5 text-[10px] font-semibold text-muted-foreground">
+                {item.badgeCount && !item.badgeKey ? (
+                  <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-muted px-1 text-[10px] font-semibold text-muted-foreground">
                     {item.badgeCount}
                   </span>
                 ) : null}
@@ -118,31 +117,31 @@ function SidebarContent({
 }) {
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
+      <div className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
         <Logo compact />
-        <span className="text-sm font-semibold tracking-tight">TalentMatch AI</span>
+        <span className="text-[13px] font-semibold tracking-tight">TalentMatch</span>
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
+      <div className="min-h-0 flex-1 overflow-y-auto px-2.5 py-3">
         <NavList items={items} pathname={pathname} onNavigate={onNavigate} />
       </div>
-      <div className="shrink-0 border-t p-3">
+      <div className="shrink-0 border-t p-2.5">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left transition-colors hover:bg-muted/60"
+              className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-muted/50"
             >
-              <Avatar className="size-8">
-                <AvatarFallback>{user ? initials(user.name) : <UserRound className="size-4" />}</AvatarFallback>
+              <Avatar className="size-7">
+                <AvatarFallback className="text-[10px]">{user ? initials(user.name) : <UserRound className="size-3.5" />}</AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[13px] font-medium">{user?.name ?? "Signed out"}</p>
-                <p className="truncate text-xs text-muted-foreground">{roleLabel}</p>
+                <p className="truncate text-[13px] font-medium leading-tight">{user?.name ?? "Signed out"}</p>
+                <p className="truncate text-[11px] text-muted-foreground">{roleLabel}</p>
               </div>
               <ChevronsUpDown className="size-3.5 text-muted-foreground" aria-hidden />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" side="top" className="w-64">
+          <DropdownMenuContent align="start" side="top" className="w-60">
             <DropdownMenuLabel>Switch demo account</DropdownMenuLabel>
             <DropdownMenuSeparator />
             {DEMO_ACCOUNTS.map((account) => (
@@ -154,8 +153,8 @@ function SidebarContent({
                   router.push(`/login?account=${account.role}`);
                 }}
               >
-                <Avatar className="size-6">
-                  <AvatarFallback className="text-[10px]">{initials(account.name)}</AvatarFallback>
+                <Avatar className="size-5">
+                  <AvatarFallback className="text-[9px]">{initials(account.name)}</AvatarFallback>
                 </Avatar>
                 <div className="ml-2">
                   <p className="text-sm font-medium">{account.name}</p>
@@ -217,16 +216,16 @@ export function WorkspaceShell({
 
   return (
     <div className="flex min-h-svh w-full">
-      <aside className="hidden w-60 shrink-0 border-r bg-sidebar lg:block">{sidebar}</aside>
+      <aside className="hidden w-56 shrink-0 border-r bg-sidebar lg:block">{sidebar}</aside>
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b bg-background/90 px-4 backdrop-blur sm:px-6">
+        <header className="sticky top-0 z-30 flex h-12 shrink-0 items-center gap-3 border-b bg-background/90 px-4 backdrop-blur sm:px-6">
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open navigation">
                 <Menu className="size-5" aria-hidden />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-72 p-0">
+            <SheetContent side="left" className="w-64 p-0">
               <SheetTitle className="sr-only">Workspace navigation</SheetTitle>
               {sidebar}
             </SheetContent>
@@ -234,14 +233,13 @@ export function WorkspaceShell({
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold tracking-tight">{title}</p>
           </div>
-          <div className="ml-auto flex items-center gap-1">
-            <ThemeToggle />
+          <div className="ml-auto flex items-center gap-0.5">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Notifications">
-                  <Bell className="size-4.5" aria-hidden />
+                <Button variant="ghost" size="icon" className="size-8" aria-label="Notifications">
+                  <Bell className="size-4" aria-hidden />
                   {unread > 0 && (
-                    <span className="absolute top-1.5 right-1.5 flex size-2 rounded-full bg-primary ring-2 ring-background" aria-hidden />
+                    <span className="absolute top-1.5 right-1.5 flex size-1.5 rounded-full bg-primary ring-2 ring-background" aria-hidden />
                   )}
                 </Button>
               </DropdownMenuTrigger>
@@ -267,13 +265,13 @@ export function WorkspaceShell({
             </DropdownMenu>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full" aria-label="Account menu">
-                  <Avatar className="size-7">
-                    <AvatarFallback>{user ? initials(user.name) : <UserRound className="size-4" />}</AvatarFallback>
+                <Button variant="ghost" size="icon" className="size-8 rounded-full" aria-label="Account menu">
+                  <Avatar className="size-6">
+                    <AvatarFallback className="text-[10px]">{user ? initials(user.name) : <UserRound className="size-3.5" />}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className="w-52">
                 <DropdownMenuLabel>
                   <p className="text-sm font-medium">{user?.name}</p>
                   <p className="text-xs font-normal text-muted-foreground">{user?.email}</p>
@@ -296,7 +294,7 @@ export function WorkspaceShell({
             </DropdownMenu>
           </div>
         </header>
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-5 sm:px-6 lg:px-8">{children}</main>
       </div>
     </div>
   );

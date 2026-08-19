@@ -20,7 +20,7 @@ export function PublicHeader() {
         <nav className="hidden items-center gap-1 md:flex" aria-label="Primary">
           <Link href="/jobs" className="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent">Find jobs</Link>
           <Link href="/companies" className="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent">Companies</Link>
-          <Link href="/#how-it-works" className="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent">How it works</Link>
+          <Link href="/home/#how-it-works" className="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent">How it works</Link>
         </nav>
         <div className="ml-auto flex items-center gap-2">
           <ThemeToggle />

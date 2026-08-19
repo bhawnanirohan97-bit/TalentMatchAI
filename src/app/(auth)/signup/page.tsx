@@ -6,6 +6,6 @@ export const metadata: Metadata = {
   description: "Create a recruiter or student account on TalentMatch AI.",
 };
 
-export default function SignupPage() {
+export default function AuthSignupPage() {
   return <SignupView />;
 }
